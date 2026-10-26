@@ -1,408 +1,432 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#e0e5ec">
-  <meta name="description" content="BetterPDF — préparez vos PDF pour une impression plus facile.">
-  <title>BetterPDF — pour des PDF plus faciles à imprimer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      color-scheme: light;
-      --surface: #e0e5ec;
-      --blue: #5978A8;
-      --blue-deep: #3e5f90;
-      --ink: #39485a;
-      --muted: #7b8797;
-      --raised: 9px 9px 20px #bec4cc, -9px -9px 20px #ffffff;
-      --pressed: inset 5px 5px 10px #bec4cc, inset -5px -5px 10px #ffffff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      min-height: 100vh;
-      margin: 0;
-      padding: 28px 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.65), transparent 46rem), #e0e5ec;
-      color: var(--ink);
-      font-family: 'Nunito', sans-serif;
-    }
-    button { font: inherit; }
-    .container {
-      width: 100%;
-      max-width: 600px;
-      padding: clamp(26px, 6vw, 42px);
-      border: 1px solid rgba(255,255,255,.55);
-      border-radius: 30px;
-      background: #e0e5ec;
-      box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
-      animation: arrive .55s cubic-bezier(.2,.7,.25,1) both;
-    }
-    @keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    h1 {
-      margin: 0;
-      text-align: center;
-      color: transparent;
-      -webkit-text-stroke: 1.7px #5978A8;
-      text-shadow: 0 2px 0 rgba(89,120,168,.09);
-      font-size: clamp(3rem, 10vw, 4.25rem);
-      line-height: 1.05;
-      font-weight: 900;
-      letter-spacing: -2.5px;
-    }
-    .subtitle { margin: 8px 0 29px; text-align: center; color: #667486; font-size: 1rem; font-style: italic; }
-    #drop-zone {
-      min-height: 194px;
-      padding: 30px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 11px;
-      border: 3px dashed #5978A8;
-      border-radius: 20px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: inset 5px 5px 11px #c2c7cf, inset -5px -5px 11px #ffffff;
-      transition: border-color .2s ease, background .2s ease, transform .2s ease;
-    }
-    #drop-zone:hover { background: rgba(255,255,255,.2); }
-    #drop-zone.drag-over { border-color: #3e5f90; background: rgba(89,120,168,.09); transform: scale(1.01); }
-    #drop-zone:focus-visible { outline: 3px solid rgba(89,120,168,.35); outline-offset: 4px; }
-    .upload-mark {
-      width: 48px; height: 48px; display: grid; place-items: center;
-      border-radius: 16px; color: #5978A8; box-shadow: 5px 5px 10px #bec4cc, -5px -5px 10px #ffffff;
-    }
-    .upload-mark svg { width: 25px; height: 25px; }
-    #drop-zone p { margin: 0; font-size: 1.05rem; font-weight: 800; }
-    .drop-note { color: var(--muted); font-size: .84rem; }
-    #file-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-    #file-input:focus-visible { outline: 3px solid #5978A8; }
-    #select-btn, #progress-container { width: 100%; }
-    #select-btn {
-      min-height: 52px;
-      margin-top: 17px;
-      padding: 14px 20px;
-      border: 0;
-      border-radius: 15px;
-      background: #e0e5ec;
-      box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
-      color: #5978A8;
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform .16s ease, box-shadow .16s ease, color .16s ease;
-    }
-    #select-btn:hover { color: #3e5f90; transform: translateY(-1px); }
-    #select-btn:active, #process-btn:active { box-shadow: inset 4px 4px 8px #bec4cc, inset -4px -4px 8px #ffffff; transform: translateY(1px); }
-    button:focus-visible { outline: 3px solid rgba(89,120,168,.38); outline-offset: 4px; }
-    button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-    #file-list { display: grid; gap: 9px; margin-top: 18px; }
-    .file-item {
-      min-width: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 11px 10px 14px;
-      border-radius: 12px;
-      background: #e0e5ec;
-      box-shadow: 3px 3px 7px #bec4cc, -3px -3px 7px #ffffff;
-      animation: arrive .2s ease both;
-    }
-    .file-details { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .file-name { overflow: hidden; color: #42536a; font-size: .9rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-    .file-size { color: var(--muted); font-size: .76rem; }
-    .remove-btn { flex: 0 0 auto; width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; color: #d64d58; box-shadow: none; cursor: pointer; font-size: 20px; line-height: 1; }
-    .remove-btn:hover { background: rgba(214,77,88,.08); }
-    #progress-container { margin-top: 20px; }
-    .progress-heading { display: flex; justify-content: space-between; gap: 12px; margin: 0 2px 8px; color: #758194; font-size: .82rem; font-weight: 800; }
-    .progress-heading span:last-child { color: #5978A8; font-variant-numeric: tabular-nums; }
-    .progress-bar-wrap {
-      position: relative;
-      height: 30px;
-      overflow: hidden;
-      border-radius: 10px;
-      background: #e0e5ec;
-      box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
-    }
-    #progress-bar { width: 0%; height: 100%; border-radius: 10px; background: #5978A8; transition: width .25s ease; }
-    #progress-text { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #333; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
-    #process-btn {
-      width: 100%;
-      min-height: 52px;
-      margin-top: 18px;
-      padding: 14px 20px;
-      border: 0;
-      border-radius: 15px;
-      background: #e0e5ec;
-      box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
-      color: #5978A8;
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform .16s ease, box-shadow .16s ease;
-    }
-    #status { min-height: 42px; margin-top: 20px; padding: 10px 12px; border-radius: 10px; text-align: center; color: #748092; font-size: .88rem; font-weight: 800; }
-    #status.connected { color: #258b5a; background: rgba(46,204,113,.07); }
-    #status.disconnected { color: #c64343; background: rgba(231,76,60,.07); }
-    #status.info { color: #61728a; }
-    [hidden] { display: none !important; }
-    @media (max-width: 460px) { body { padding: 18px 14px; } .container { border-radius: 24px; } #drop-zone { min-height: 175px; } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterPDF - Pour des PDF plus faciles à imprimer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #e0e5ec;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #e0e5ec;
+            border-radius: 30px;
+            padding: 50px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow:
+                20px 20px 60px #bebebe,
+                -20px -20px 60px #ffffff;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #2d3436;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 15px 30px;
+            border-radius: 20px;
+            border: 3px solid #5978A8;
+            box-shadow:
+                inset 8px 8px 16px #bebebe,
+                inset -8px -8px 16px #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #636e72;
+            font-style: italic;
+            font-size: 1.1em;
+            margin-bottom: 35px;
+            font-weight: 400;
+        }
+
+        .drop-zone {
+            background: #e0e5ec;
+            border-radius: 25px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow:
+                inset 10px 10px 20px #bebebe,
+                inset -10px -10px 20px #ffffff;
+            margin-bottom: 25px;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            box-shadow:
+                inset 15px 15px 30px #bebebe,
+                inset -15px -15px 30px #ffffff;
+        }
+
+        .drop-zone p {
+            color: #636e72;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .drop-zone .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn-select {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: #e0e5ec;
+            border: none;
+            border-radius: 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            color: #5978A8;
+            cursor: pointer;
+            box-shadow:
+                10px 10px 20px #bebebe,
+                -10px -10px 20px #ffffff;
+            transition: all 0.2s ease;
+            margin-bottom: 25px;
+        }
+
+        .btn-select:hover {
+            box-shadow:
+                inset 8px 8px 16px #bebebe,
+                inset -8px -8px 16px #ffffff;
+        }
+
+        .btn-select:active {
+            box-shadow:
+                inset 10px 10px 20px #bebebe,
+                inset -10px -10px 20px #ffffff;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 30px;
+            background: #e0e5ec;
+            border-radius: 15px;
+            box-shadow:
+                inset 8px 8px 16px #bebebe,
+                inset -8px -8px 16px #ffffff;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #5978A8;
+            border-radius: 15px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #636e72;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .file-list {
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .file-item {
+            background: #e0e5ec;
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow:
+                6px 6px 12px #bebebe,
+                -6px -6px 12px #ffffff;
+            font-size: 0.9em;
+            color: #2d3436;
+        }
+
+        .file-item .file-icon {
+            margin-right: 10px;
+        }
+
+        .btn-download {
+            display: none;
+            width: 100%;
+            padding: 18px;
+            background: #5978A8;
+            border: none;
+            border-radius: 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            box-shadow:
+                10px 10px 20px #bebebe,
+                -10px -10px 20px #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #4a6491;
+        }
+
+        .btn-download:active {
+            box-shadow:
+                inset 8px 8px 16px #3d5276,
+                inset -8px -8px 16px #5978A8;
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            box-shadow:
+                inset 5px 5px 10px #b8d4bc,
+                inset -5px -5px 10px #effff0;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            box-shadow:
+                inset 5px 5px 10px #d4b5b9,
+                inset -5px -5px 10px #ffeef0;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>BetterPDF</h1>
-    <p class="subtitle">pour des PDF plus faciles à imprimer</p>
+    <div class="container">
+        <h1>BetterPDF</h1>
+        <p class="subtitle">pour des PDF plus faciles à imprimer</p>
 
-    <div id="drop-zone" tabindex="0" role="button" aria-label="Déposez ici les PDF à traiter ou choisissez des fichiers">
-      <span class="upload-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
-      </span>
-      <p>Déposez ici les PDF à traiter</p>
-      <span class="drop-note">ou choisissez des fichiers depuis votre appareil</span>
-      <input id="file-input" type="file" hidden accept=".pdf" multiple aria-label="Sélectionner des fichiers PDF">
+        <div class="drop-zone" id="dropZone">
+            <span class="icon">📄</span>
+            <p>Déposez ici les PDF à traiter</p>
+        </div>
+
+        <input type="file" id="fileInput" accept=".pdf" multiple>
+
+        <button class="btn-select" id="btnSelect">Sélectionner fichiers PDF</button>
+
+        <div class="file-list" id="fileList"></div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+        <p class="progress-text" id="progressText">Traitement en cours...</p>
+
+        <button class="btn-download" id="btnDownload">⬇️ Télécharger Livrables_BetterPDF.zip</button>
+
+        <div class="status-message" id="statusMessage"></div>
     </div>
 
-    <button id="select-btn" type="button">Sélectionner fichiers PDF</button>
-    <div id="file-list" aria-live="polite"></div>
-    <div id="progress-container" hidden>
-      <div class="progress-heading"><span id="progress-label">Envoi et traitement</span><span id="progress-text">0%</span></div>
-      <div class="progress-bar-wrap" role="progressbar" aria-label="Progression du traitement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div id="progress-bar"></div>
-      </div>
-    </div>
-    <button id="process-btn" type="button" hidden>Traiter les PDF</button>
-    <div id="status" class="info" role="status" aria-live="polite">Vérification de la connexion au serveur…</div>
-  </div>
+    <script>
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
-  <script>
-    // Remplacez TON_IP_LOCALE par l’IP locale de l’ordinateur qui héberge le serveur (ex. 192.168.1.42).
-    // Pour GitHub Pages, hébergez server.py sur un serveur domestique accessible depuis Internet (redirection de port sur le routeur).
-    const API_URL = 'http://http://176.150.161.213:5001';
-    let selectedFiles = [];
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnSelect = document.getElementById('btnSelect');
+        const fileList = document.getElementById('fileList');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const btnDownload = document.getElementById('btnDownload');
+        const statusMessage = document.getElementById('statusMessage');
 
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const selectButton = document.getElementById('select-btn');
-    const fileList = document.getElementById('file-list');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const progressTrack = document.querySelector('.progress-bar-wrap');
-    const progressLabel = document.getElementById('progress-label');
-    const processButton = document.getElementById('process-btn');
-    const statusBox = document.getElementById('status');
-    let isProcessing = false;
+        let selectedFiles = [];
+        let processedZipBlob = null;
 
-    function setStatus(message, state = 'info') {
-      statusBox.textContent = message;
-      statusBox.className = state;
-    }
+        // Gestion du clic sur la zone de dépôt
+        dropZone.addEventListener('click', () => fileInput.click());
+        btnSelect.addEventListener('click', () => fileInput.click());
 
-    async function checkServer() {
-      try {
-        const response = await fetch(API_URL + '/api/health');
-        if (!response.ok) throw new Error('Réponse HTTP ' + response.status);
-        setStatus('Serveur connecté', 'connected');
-      } catch (error) {
-        setStatus('Serveur non accessible — vérifiez que le serveur est lancé sur le port 5001.', 'disconnected');
-      }
-    }
+        // Gestion du drag & drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
 
-    function isPdf(file) {
-      return file && file.name.toLowerCase().endsWith('.pdf');
-    }
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
 
-    function addFiles(files) {
-      const incoming = Array.from(files || []);
-      const valid = incoming.filter(isPdf);
-      const rejectedCount = incoming.length - valid.length;
-      let addedCount = 0;
-      for (const file of valid) {
-        const duplicate = selectedFiles.some(existing => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified);
-        if (!duplicate) { selectedFiles.push(file); addedCount += 1; }
-      }
-      updateFileList();
-      if (rejectedCount > 0) setStatus(rejectedCount + ' fichier(s) ignoré(s) : seuls les fichiers .pdf sont acceptés.', 'disconnected');
-      else if (addedCount > 0) setStatus(addedCount + ' fichier(s) PDF ajouté(s).', 'info');
-      else if (valid.length > 0) setStatus('Ces fichiers PDF sont déjà dans la liste.', 'info');
-    }
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
 
-    function updateFileList() {
-      fileList.replaceChildren();
-      selectedFiles.forEach((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'file-item';
-        const details = document.createElement('div');
-        details.className = 'file-details';
-        const name = document.createElement('span');
-        name.className = 'file-name';
-        name.textContent = file.name;
-        name.title = file.name;
-        const size = document.createElement('span');
-        size.className = 'file-size';
-        size.textContent = formatFileSize(file.size);
-        details.append(name, size);
-        const removeButton = document.createElement('button');
-        removeButton.className = 'remove-btn';
-        removeButton.type = 'button';
-        removeButton.textContent = '✕';
-        removeButton.setAttribute('aria-label', 'Supprimer ' + file.name);
-        removeButton.disabled = isProcessing;
-        removeButton.addEventListener('click', () => removeFile(index));
-        item.append(details, removeButton);
-        fileList.appendChild(item);
-      });
-      processButton.hidden = selectedFiles.length === 0;
-      processButton.disabled = isProcessing || selectedFiles.length === 0;
-      selectButton.disabled = isProcessing;
-      fileInput.disabled = isProcessing;
-    }
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
 
-    function removeFile(index) {
-      if (isProcessing || index < 0 || index >= selectedFiles.length) return;
-      selectedFiles.splice(index, 1);
-      updateFileList();
-      setStatus(selectedFiles.length ? 'Fichier supprimé de la liste.' : 'Aucun fichier sélectionné.', 'info');
-    }
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
 
-    function formatFileSize(bytes) {
-      if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-      return (bytes / 1024).toFixed(2) + ' KB';
-    }
-
-    function setProgress(percent, label) {
-      const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
-      progressBar.style.width = safePercent + '%';
-      progressText.textContent = safePercent + '%';
-      progressTrack.setAttribute('aria-valuenow', String(safePercent));
-      if (label) progressLabel.textContent = label;
-    }
-
-    function getDownloadName(disposition) {
-      if (!disposition) return 'BetterPDF_resultat.zip';
-      const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-      if (utfMatch) { try { return decodeURIComponent(utfMatch[1].replace(/"/g, '')); } catch (_) { /* utilise le nom de secours */ } }
-      const match = disposition.match(/filename="?([^";]+)"?/i);
-      return match ? match[1] : 'BetterPDF_resultat.zip';
-    }
-
-    function processPdfs() {
-      if (isProcessing) return;
-      if (selectedFiles.length === 0) { alert('Veuillez sélectionner au moins un fichier PDF.'); return; }
-
-      const formData = new FormData();
-      selectedFiles.forEach(file => formData.append('files', file));
-      isProcessing = true;
-      progressContainer.hidden = false;
-      setProgress(0, 'Envoi et traitement');
-      updateFileList();
-      setStatus('Envoi des fichiers au serveur…', 'info');
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', API_URL + '/api/process');
-      xhr.responseType = 'blob';
-      xhr.upload.addEventListener('progress', event => {
-        if (event.lengthComputable) {
-          // L'envoi représente 0–90 % ; le traitement serveur et le téléchargement suivent.
-          setProgress((event.loaded / event.total) * 90, 'Envoi des fichiers');
-        }
-      });
-      xhr.addEventListener('load', async () => {
-        try {
-          if (xhr.status < 200 || xhr.status >= 300) {
-            let message = 'Le serveur a répondu avec le code ' + xhr.status + '.';
-            if (xhr.response instanceof Blob) {
-              const body = await xhr.response.text();
-              try { const parsed = JSON.parse(body); message = parsed.error || parsed.message || message; }
-              catch (_) { if (body.trim()) message = body.trim().slice(0, 300); }
+            if (selectedFiles.length === 0) {
+                showStatus('Veuillez sélectionner des fichiers PDF valides.', 'error');
+                return;
             }
-            throw new Error(message);
-          }
-          if (!(xhr.response instanceof Blob) || xhr.response.size === 0) throw new Error('Le serveur a renvoyé un fichier ZIP vide ou invalide.');
-          setProgress(100, 'Téléchargement prêt');
-          const url = URL.createObjectURL(xhr.response);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = getDownloadName(xhr.getResponseHeader('Content-Disposition'));
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-          setStatus('Traitement terminé — le ZIP a été téléchargé.', 'connected');
-        } catch (error) {
-          setStatus('Erreur : ' + error.message, 'disconnected');
-        } finally {
-          isProcessing = false;
-          updateFileList();
+
+            // Afficher la liste des fichiers
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `<span class="file-icon">📑</span> ${file.name}`;
+                fileList.appendChild(item);
+            });
+            fileList.style.display = 'block';
+
+            // Lancer le traitement
+            processFiles();
         }
-      });
-      xhr.addEventListener('error', () => {
-        isProcessing = false;
-        updateFileList();
-        setStatus('Erreur réseau : impossible de communiquer avec le serveur.', 'disconnected');
-      });
-      xhr.addEventListener('abort', () => {
-        isProcessing = false;
-        updateFileList();
-        setStatus('Envoi interrompu.', 'disconnected');
-      });
-      xhr.addEventListener('timeout', () => {
-        isProcessing = false;
-        updateFileList();
-        setStatus('Délai dépassé : le serveur n’a pas répondu à temps.', 'disconnected');
-      });
-      xhr.timeout = 10 * 60 * 1000;
-      try { xhr.send(formData); }
-      catch (error) {
-        isProcessing = false;
-        updateFileList();
-        setStatus('Erreur : ' + error.message, 'disconnected');
-      }
-    }
 
-    selectButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', event => {
-      addFiles(event.target.files);
-      fileInput.value = '';
-    });
-    dropZone.addEventListener('click', event => {
-      if (event.target !== fileInput && !isProcessing) fileInput.click();
-    });
-    dropZone.addEventListener('keydown', event => {
-      if ((event.key === 'Enter' || event.key === ' ') && !isProcessing) {
-        event.preventDefault();
-        fileInput.click();
-      }
-    });
-    dropZone.addEventListener('dragenter', event => {
-      event.preventDefault();
-      if (!isProcessing) dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragover', event => {
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = isProcessing ? 'none' : 'copy';
-      if (!isProcessing) dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragleave', event => {
-      event.preventDefault();
-      if (!event.relatedTarget || !dropZone.contains(event.relatedTarget)) dropZone.classList.remove('drag-over');
-    });
-    dropZone.addEventListener('drop', event => {
-      event.preventDefault();
-      dropZone.classList.remove('drag-over');
-      if (!isProcessing) addFiles(event.dataTransfer ? event.dataTransfer.files : []);
-    });
-    processButton.addEventListener('click', processPdfs);
+        async function processFiles() {
+            progressContainer.style.display = 'block';
+            progressText.style.display = 'block';
+            btnDownload.style.display = 'none';
+            statusMessage.style.display = 'none';
 
-    checkServer();
-  </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"8607d2a720d14b038279025b2b5a82e5","spa":2}' crossorigin="anonymous"></script>
+            const zip = new JSZip();
+            const totalFiles = selectedFiles.length;
+
+            for (let i = 0; i < totalFiles; i++) {
+                const file = selectedFiles[i];
+                const progress = Math.round(((i + 1) / totalFiles) * 100);
+
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+                progressText.textContent = `Traitement de ${file.name}... (${i + 1}/${totalFiles})`;
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+                    // Traitement de chaque page
+                    const pages = pdfDoc.getPages();
+                    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+                    for (const page of pages) {
+                        const { width, height } = page.getSize();
+
+                        // Appliquer le cropbox avec marges de 20pt
+                        const margin = 20;
+                        page.setCropBox(margin, margin, width - margin, height - margin);
+                        page.setMediaBox(margin, margin, width - margin, height - margin);
+                        page.setBleedBox(margin, margin, width - margin, height - margin);
+                        page.setTrimBox(margin, margin, width - margin, height - margin);
+                        page.setArtBox(margin, margin, width - margin, height - margin);
+
+                        // Ajouter le watermark invisible "BetterPdfVersion" en blanc sur blanc
+                        // Position : bas-droite, très petit (4pt)
+                        page.drawText('BetterPdfVersion', {
+                            x: width - margin - 50,
+                            y: margin + 5,
+                            size: 4,
+                            font: font,
+                            color: rgb(1, 1, 1), // Blanc sur blanc = invisible
+                            opacity: 1
+                        });
+                    }
+
+                    // Sauvegarder le PDF modifié
+                    const pdfBytes = await pdfDoc.save();
+
+                    // Ajouter au ZIP avec le nom modifié
+                    const originalName = file.name.replace(/\.pdf$/i, '');
+                    const newName = `${originalName}_BetterPDF.pdf`;
+                    zip.file(newName, pdfBytes);
+
+                } catch (error) {
+                    console.error(`Erreur avec ${file.name}:`, error);
+                    showStatus(`Erreur lors du traitement de ${file.name}: ${error.message}`, 'error');
+                    return;
+                }
+
+                // Petite pause pour permettre l'UI de se rafraîchir
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            // Générer le ZIP
+            progressText.textContent = 'Création du ZIP...';
+            try {
+                processedZipBlob = await zip.generateAsync({ type: 'blob' });
+
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                progressText.textContent = 'Terminé !';
+                btnDownload.style.display = 'block';
+
+                showStatus(`${totalFiles} PDF traité(s) avec succès !`, 'success');
+
+            } catch (error) {
+                console.error('Erreur ZIP:', error);
+                showStatus(`Erreur lors de la création du ZIP: ${error.message}`, 'error');
+            }
+        }
+
+        btnDownload.addEventListener('click', () => {
+            if (processedZipBlob) {
+                const url = URL.createObjectURL(processedZipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Livrables_BetterPDF.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message status-' + type;
+            statusMessage.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
