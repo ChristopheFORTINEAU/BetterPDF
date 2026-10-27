@@ -3,247 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetterPDF - Pour des PDF plus faciles à imprimer</title>
+    <title>BetterPDF - Pour des PDF faciles à imprimer</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            color-scheme: light;
+            --surface: #ECF0F3;
+            --ink: #2d3748;
+            --muted: #657184;
+            --shadow-dark: rgba(163, 177, 198, .62);
+            --shadow-light: rgba(255, 255, 255, .92);
+            --accent: #3b6fe0;
         }
 
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html { min-height: 100%; }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background: #e0e5ec;
             min-height: 100vh;
+            margin: 0;
+            padding: 32px 18px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            color: var(--ink);
+            font-family: 'Nunito', sans-serif;
+            background: var(--surface);
         }
 
         .container {
-            background: #e0e5ec;
-            border-radius: 30px;
-            padding: 50px 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow:
-                20px 20px 60px #bebebe,
-                -20px -20px 60px #ffffff;
+            width: min(100%, 420px);
+            padding: 28px 26px 30px;
+            border-radius: 40px;
+            background: var(--surface);
+            box-shadow: 18px 18px 38px var(--shadow-dark), -18px -18px 38px var(--shadow-light);
         }
 
         h1 {
-            font-size: 2.2em;
-            font-weight: 700;
-            color: #2d3436;
+            margin: 0 0 14px;
+            padding: 19px 14px 20px;
+            border: 0;
+            border-radius: 32px;
+            color: #5978A8;
             text-align: center;
-            margin-bottom: 10px;
-            padding: 15px 30px;
-            border-radius: 20px;
-            border: 3px solid #5978A8;
-            box-shadow:
-                inset 8px 8px 16px #bebebe,
-                inset -8px -8px 16px #ffffff;
-            letter-spacing: 1px;
+            font-size: clamp(2.8rem, 11vw, 4rem);
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: .015em;
+            text-shadow: 1px 1px 2px rgba(255,255,255,.92);
+            background: var(--surface);
+            box-shadow: 9px 9px 19px var(--shadow-dark), -9px -9px 19px var(--shadow-light);
         }
 
         .subtitle {
+            margin: 0 0 26px;
+            color: #4a5568;
             text-align: center;
-            color: #636e72;
-            font-style: italic;
-            font-size: 1.1em;
-            margin-bottom: 35px;
-            font-weight: 400;
+            font-size: clamp(.62rem, 3.5vw, 1rem);
+            line-height: 1.55;
+            font-weight: 800;
+            letter-spacing: .12em;
+            white-space: nowrap;
         }
 
         .drop-zone {
-            background: #e0e5ec;
-            border-radius: 25px;
-            padding: 50px 30px;
+            margin: 0 0 22px;
+            padding: 30px 20px;
+            border-radius: 32px;
+            color: var(--muted);
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow:
-                inset 10px 10px 20px #bebebe,
-                inset -10px -10px 20px #ffffff;
-            margin-bottom: 25px;
+            background: var(--surface);
+            box-shadow: inset 8px 8px 17px var(--shadow-dark), inset -8px -8px 17px var(--shadow-light);
+            transition: box-shadow .22s ease, transform .22s ease;
         }
 
         .drop-zone:hover, .drop-zone.dragover {
-            box-shadow:
-                inset 15px 15px 30px #bebebe,
-                inset -15px -15px 30px #ffffff;
+            box-shadow: inset 11px 11px 21px var(--shadow-dark), inset -11px -11px 21px var(--shadow-light);
         }
-
-        .drop-zone p {
-            color: #636e72;
-            font-size: 1.1em;
-            font-weight: 500;
-        }
-
-        .drop-zone .icon {
-            font-size: 3em;
-            margin-bottom: 15px;
+        .drop-zone:active { transform: scale(.99); }
+        .drop-zone p { margin: 0; color: #566276; font-size: 1rem; font-weight: 800; }
+        .drop-zone .drop-logo {
             display: block;
+            width: min(210px, 72%);
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto 16px;
+            mix-blend-mode: multiply;
         }
 
-        #fileInput {
-            display: none;
-        }
+        #fileInput { display: none; }
 
-        .btn-select {
+        .btn-select, .btn-download {
             display: block;
             width: 100%;
-            padding: 18px;
-            background: #e0e5ec;
-            border: none;
-            border-radius: 20px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1em;
-            font-weight: 600;
-            color: #5978A8;
+            min-height: 58px;
+            padding: 16px 18px;
+            border: 0;
+            border-radius: 35px;
+            color: var(--ink);
+            background: var(--surface);
+            font-family: 'Nunito', sans-serif;
+            font-size: .91rem;
+            font-weight: 900;
+            letter-spacing: .075em;
+            text-align: center;
+            text-transform: uppercase;
             cursor: pointer;
-            box-shadow:
-                10px 10px 20px #bebebe,
-                -10px -10px 20px #ffffff;
-            transition: all 0.2s ease;
-            margin-bottom: 25px;
+            box-shadow: 8px 8px 17px var(--shadow-dark), -8px -8px 17px var(--shadow-light);
+            transition: box-shadow .2s ease, transform .2s ease, color .2s ease;
         }
-
-        .btn-select:hover {
-            box-shadow:
-                inset 8px 8px 16px #bebebe,
-                inset -8px -8px 16px #ffffff;
+        .btn-select { margin-bottom: 24px; }
+        .btn-select:hover, .btn-download:hover {
+            color: var(--accent);
+            box-shadow: inset 7px 7px 14px var(--shadow-dark), inset -7px -7px 14px var(--shadow-light);
         }
-
-        .btn-select:active {
-            box-shadow:
-                inset 10px 10px 20px #bebebe,
-                inset -10px -10px 20px #ffffff;
+        .btn-select:active, .btn-download:active {
+            transform: scale(.985);
+            box-shadow: inset 9px 9px 17px var(--shadow-dark), inset -9px -9px 17px var(--shadow-light);
+        }
+        .btn-select:focus-visible, .btn-download:focus-visible, .drop-zone:focus-visible {
+            outline: 3px solid rgba(59,111,224,.55);
+            outline-offset: 4px;
         }
 
         .progress-container {
-            width: 100%;
-            height: 30px;
-            background: #e0e5ec;
-            border-radius: 15px;
-            box-shadow:
-                inset 8px 8px 16px #bebebe,
-                inset -8px -8px 16px #ffffff;
-            overflow: hidden;
-            margin-bottom: 15px;
             display: none;
+            width: 100%;
+            height: 24px;
+            margin: 0 0 12px;
+            overflow: hidden;
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
         }
-
         .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: #5978A8;
-            border-radius: 15px;
-            transition: width 0.3s ease;
             display: flex;
+            width: 0%;
+            height: 100%;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 0.85em;
+            border-radius: 18px;
+            color: #fff;
+            background: linear-gradient(90deg, #3b6fe0, #6b91ed);
+            font-size: .76rem;
+            font-weight: 900;
+            transition: width .3s ease;
         }
-
         .progress-text {
+            display: none;
+            margin: 0 0 18px;
+            color: var(--muted);
             text-align: center;
-            color: #636e72;
-            font-weight: 500;
-            margin-bottom: 20px;
-            display: none;
+            font-weight: 800;
         }
 
-        .file-list {
-            margin-bottom: 20px;
-            display: none;
-        }
-
+        .file-list { display: none; margin: 0 0 20px; }
         .file-item {
-            background: #e0e5ec;
-            border-radius: 15px;
-            padding: 12px 20px;
-            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            box-shadow:
-                6px 6px 12px #bebebe,
-                -6px -6px 12px #ffffff;
-            font-size: 0.9em;
-            color: #2d3436;
+            gap: 8px;
+            margin: 0 0 10px;
+            padding: 13px 16px;
+            overflow-wrap: anywhere;
+            border-radius: 20px;
+            color: var(--ink);
+            background: var(--surface);
+            box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+            font-size: .9rem;
+            font-weight: 700;
         }
-
-        .file-item .file-icon {
-            margin-right: 10px;
-        }
+        .file-item .file-icon { flex: 0 0 auto; }
 
         .btn-download {
             display: none;
-            width: 100%;
-            padding: 18px;
-            background: #5978A8;
-            border: none;
-            border-radius: 20px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            box-shadow:
-                10px 10px 20px #bebebe,
-                -10px -10px 20px #ffffff;
-            transition: all 0.2s ease;
+            margin-top: 3px;
+            color: #fff;
+            background: #3b6fe0;
         }
-
-        .btn-download:hover {
-            background: #4a6491;
-        }
-
+        .btn-download:hover { color: #fff; background: #3565d1; }
         .btn-download:active {
-            box-shadow:
-                inset 8px 8px 16px #3d5276,
-                inset -8px -8px 16px #5978A8;
+            box-shadow: inset 8px 8px 15px rgba(30,68,152,.45), inset -8px -8px 15px rgba(118,155,239,.55);
         }
 
         .status-message {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 15px;
             display: none;
-            font-weight: 500;
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: 800;
         }
-
         .status-success {
-            background: #d4edda;
-            color: #155724;
-            box-shadow:
-                inset 5px 5px 10px #b8d4bc,
-                inset -5px -5px 10px #effff0;
+            color: #21834c;
+            background: #e2f1e8;
+            box-shadow: inset 5px 5px 10px rgba(163,177,166,.55), inset -5px -5px 10px #f7fff9;
+        }
+        .status-error {
+            color: #d63031;
+            background: #f4e4e5;
+            box-shadow: inset 5px 5px 10px rgba(190,156,160,.5), inset -5px -5px 10px #fff7f7;
         }
 
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-            box-shadow:
-                inset 5px 5px 10px #d4b5b9,
-                inset -5px -5px 10px #ffeef0;
+        @media (max-width: 480px) {
+            body { padding: 20px 14px; align-items: flex-start; }
+            .container { padding: 22px 19px 24px; border-radius: 34px; }
+            h1 { border-radius: 27px; }
+            .subtitle { margin-bottom: 22px; font-size: clamp(.59rem, 3.5vw, .9rem); }
+            .drop-zone { padding: 25px 16px; border-radius: 28px; }
         }
-    </style>
+</style>
 </head>
 <body>
     <div class="container">
         <h1>BetterPDF</h1>
-        <p class="subtitle">pour des PDF plus faciles à imprimer</p>
+        <p class="subtitle">pour des PDF faciles à imprimer</p>
 
         <div class="drop-zone" id="dropZone">
-            <span class="icon">📄</span>
+            <img class="drop-logo" src="logo-fichier.png" alt="logo-fichier">
             <p>Déposez ici les PDF à traiter</p>
         </div>
 
@@ -428,5 +410,6 @@
             statusMessage.style.display = 'block';
         }
     </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"8607d2a720d14b038279025b2b5a82e5","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
