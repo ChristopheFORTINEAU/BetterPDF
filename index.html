@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BetterPDF - Pour des PDF faciles à imprimer</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
 
@@ -240,14 +238,12 @@
         </div>
         <p class="progress-text" id="progressText">Traitement en cours...</p>
 
-        <button class="btn-download" id="btnDownload">⬇️ Télécharger Livrables_BetterPDF.zip</button>
+        <button class="btn-download" id="btnDownload">⬇️ Télécharger le PDF traité</button>
 
         <div class="status-message" id="statusMessage"></div>
     </div>
 
     <script>
-        const { PDFDocument, rgb, StandardFonts } = PDFLib;
-
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const btnSelect = document.getElementById('btnSelect');
@@ -257,54 +253,45 @@
         const progressText = document.getElementById('progressText');
         const btnDownload = document.getElementById('btnDownload');
         const statusMessage = document.getElementById('statusMessage');
-
         let selectedFiles = [];
-        let processedZipBlob = null;
+        let processedBlob = null;
+        let processedFilename = '';
 
-        // Gestion du clic sur la zone de dépôt
         dropZone.addEventListener('click', () => fileInput.click());
         btnSelect.addEventListener('click', () => fileInput.click());
-
-        // Gestion du drag & drop
         dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
+            e.preventDefault(); dropZone.classList.add('dragover');
         });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
+            e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files);
         });
-
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
         function handleFiles(files) {
             selectedFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
-
-            if (selectedFiles.length === 0) {
-                showStatus('Veuillez sélectionner des fichiers PDF valides.', 'error');
-                return;
+            if (!selectedFiles.length) {
+                showStatus('Veuillez sélectionner des fichiers PDF valides.', 'error'); return;
             }
-
-            // Afficher la liste des fichiers
             fileList.innerHTML = '';
-            selectedFiles.forEach((file, index) => {
+            selectedFiles.forEach(file => {
                 const item = document.createElement('div');
                 item.className = 'file-item';
-                item.innerHTML = `<span class="file-icon">📑</span> ${file.name}`;
+                item.textContent = `📑 ${file.name}`;
                 fileList.appendChild(item);
             });
             fileList.style.display = 'block';
-
-            // Lancer le traitement
             processFiles();
+        }
+
+        function responseFilename(disposition, fallback) {
+            if (!disposition) return fallback;
+            const encoded = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+            if (encoded) {
+                try { return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, '')); } catch (_) {}
+            }
+            const plain = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
+            return plain ? plain[1].trim() : fallback;
         }
 
         async function processFiles() {
@@ -312,96 +299,46 @@
             progressText.style.display = 'block';
             btnDownload.style.display = 'none';
             statusMessage.style.display = 'none';
-
-            const zip = new JSZip();
-            const totalFiles = selectedFiles.length;
-
-            for (let i = 0; i < totalFiles; i++) {
-                const file = selectedFiles[i];
-                const progress = Math.round(((i + 1) / totalFiles) * 100);
-
-                progressBar.style.width = progress + '%';
-                progressBar.textContent = progress + '%';
-                progressText.textContent = `Traitement de ${file.name}... (${i + 1}/${totalFiles})`;
-
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-
-                    // Traitement de chaque page
-                    const pages = pdfDoc.getPages();
-                    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-                    for (const page of pages) {
-                        const { width, height } = page.getSize();
-
-                        // Appliquer le cropbox avec marges de 20pt
-                        const margin = 20;
-                        page.setCropBox(margin, margin, width - margin, height - margin);
-                        page.setMediaBox(margin, margin, width - margin, height - margin);
-                        page.setBleedBox(margin, margin, width - margin, height - margin);
-                        page.setTrimBox(margin, margin, width - margin, height - margin);
-                        page.setArtBox(margin, margin, width - margin, height - margin);
-
-                        // Ajouter le watermark invisible "BetterPdfVersion" en blanc sur blanc
-                        // Position : bas-droite, très petit (4pt)
-                        page.drawText('BetterPdfVersion', {
-                            x: width - margin - 50,
-                            y: margin + 5,
-                            size: 4,
-                            font: font,
-                            color: rgb(1, 1, 1), // Blanc sur blanc = invisible
-                            opacity: 1
-                        });
-                    }
-
-                    // Sauvegarder le PDF modifié
-                    const pdfBytes = await pdfDoc.save();
-
-                    // Ajouter au ZIP avec le nom modifié
-                    const originalName = file.name.replace(/\.pdf$/i, '');
-                    const newName = `${originalName}_BetterPDF.pdf`;
-                    zip.file(newName, pdfBytes);
-
-                } catch (error) {
-                    console.error(`Erreur avec ${file.name}:`, error);
-                    showStatus(`Erreur lors du traitement de ${file.name}: ${error.message}`, 'error');
-                    return;
-                }
-
-                // Petite pause pour permettre l'UI de se rafraîchir
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-
-            // Générer le ZIP
-            progressText.textContent = 'Création du ZIP...';
+            processedBlob = null;
+            const formData = new FormData();
+            selectedFiles.forEach(file => formData.append('files', file, file.name));
+            progressBar.style.width = '35%';
+            progressBar.textContent = '35%';
+            progressText.textContent = `Envoi et traitement de ${selectedFiles.length} PDF...`;
             try {
-                processedZipBlob = await zip.generateAsync({ type: 'blob' });
-
+                const response = await fetch('/api/process', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    let message = `Erreur serveur (${response.status})`;
+                    try { message = (await response.json()).error || message; } catch (_) {}
+                    throw new Error(message);
+                }
+                processedBlob = await response.blob();
+                const fallback = selectedFiles.length === 1 ? selectedFiles[0].name : 'Livrables_BetterPDF.zip';
+                processedFilename = responseFilename(response.headers.get('Content-Disposition'), fallback);
                 progressBar.style.width = '100%';
                 progressBar.textContent = '100%';
                 progressText.textContent = 'Terminé !';
+                btnDownload.textContent = selectedFiles.length === 1
+                    ? `⬇️ Télécharger ${selectedFiles[0].name}`
+                    : '⬇️ Télécharger le PDF traité';
                 btnDownload.style.display = 'block';
-
-                showStatus(`${totalFiles} PDF traité(s) avec succès !`, 'success');
-
+                showStatus(`${selectedFiles.length} PDF traité(s) avec succès !`, 'success');
             } catch (error) {
-                console.error('Erreur ZIP:', error);
-                showStatus(`Erreur lors de la création du ZIP: ${error.message}`, 'error');
+                console.error('Erreur BetterPDF:', error);
+                showStatus(`Erreur lors du traitement : ${error.message}`, 'error');
             }
         }
 
         btnDownload.addEventListener('click', () => {
-            if (processedZipBlob) {
-                const url = URL.createObjectURL(processedZipBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'Livrables_BetterPDF.zip';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
+            if (!processedBlob) return;
+            const url = URL.createObjectURL(processedBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = processedFilename || (selectedFiles.length === 1 ? selectedFiles[0].name : 'Livrables_BetterPDF.zip');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
 
         function showStatus(message, type) {
@@ -410,6 +347,7 @@
             statusMessage.style.display = 'block';
         }
     </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"8607d2a720d14b038279025b2b5a82e5","spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"8607d2a720d14b038279025b2b5a82e5","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
